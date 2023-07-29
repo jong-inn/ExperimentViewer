@@ -92,8 +92,6 @@ $(document).ready(function () {
                 let model = Object.keys(example['rankings'])[rank-1];
                 let point = Object.values(example['rankings'])[rank-1];
                 if (selectedModels.includes(model)) {
-                    console.log(`previousPoint: ${previousPoint}`);
-                    console.log(`point: ${point}`);
                     if (previousPoint == point) {
                         exampleHtml += `<li class="list-group-item" data-rank="${previousRank}" data-model="${model}">`;
                         exampleHtml += `<div class="row"><div class="col-xs-auto"><span class="rank-number badge bg-info rounded-pill text-light" id="ranker">${previousRank}</span>`;

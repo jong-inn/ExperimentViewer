@@ -2,8 +2,8 @@ $(document).ready(function () {
     const showReferences = true;
     const showGoldLabels = false;
     const pageSize = 5;
-    const numEvaluators = 12;
-    const numModels = 15;
+    const numEvaluators = 16;
+    const numModels = 16;
     
     const evaluators = {
         1: "alpaca",
@@ -11,13 +11,18 @@ $(document).ready(function () {
         3: "chatgpt",
         4: "cohere",
         5: "dolly",
-        6: "gpt4",
-        7: "instructgpt",
-        8: "koala",
-        9: "open_assistant",
-        10: "red_pajama",
-        11: "vicuna",
-        12: "wizard_lm",
+        6: "falcon",
+        7: "gpt4",
+        8: "instructgpt",
+        9: "koala",
+        10: "llama",
+        11: "llamav2",
+        12: "mpt",
+        13: "openassist",
+        14: "redpajama",
+        15: "vicuna",
+        16: "wizardlm",
+        17: "human",
     }
 
     const models = {
@@ -31,12 +36,21 @@ $(document).ready(function () {
         8: "instructgpt",
         9: "koala",
         10: "llama",
-        11: "mpt",
-        12: "open_assistant",
-        13: "red_pajama",
-        14: "vicuna",
-        15: "wizard_lm",
-    } 
+        11: "llamav2",
+        12: "mpt",
+        13: "openassist",
+        14: "redpajama",
+        15: "vicuna",
+        16: "wizardlm",
+    }
+
+    const fixedNames = {
+        "instructgpt": "instruct gpt",
+        "llamav2": "llama v2",
+        "openassist": "open assistant",
+        "redpajama": "red pajama",
+        "wizardlm": "wizard lm"
+    }
     
     let collectedData = [];
     let currentPage = 1;
@@ -100,7 +114,11 @@ $(document).ready(function () {
                         exampleHtml += `<div class="row"><div class="col-xs-auto"><span class="rank-number badge bg-info rounded-pill text-light" id="ranker">${rank}</span>`;
                         previousRank = rank;
                     }
-                    exampleHtml += `<span class="rank-number badge bg-secondary rounded-pill text-light" id="ranker-info">${model} ( ${Math.round(point * 100 / 14)} % )</span><div>`;
+                    if (currentEvaluator === "human") {
+                        exampleHtml += `<span class="rank-number badge bg-secondary rounded-pill text-light" id="ranker-info">${model} ( ${Math.round(point * 100) / 100} )</span><div>`;
+                    } else {
+                        exampleHtml += `<span class="rank-number badge bg-secondary rounded-pill text-light" id="ranker-info">${model} ( ${Math.round(point * 100 / (numModels - 2))} % )</span><div>`;
+                    }
                     exampleHtml += `<div class="col" id="line-text">${example[rank.toString()]}</div></li>`;
                     previousPoint = point;
                 }
@@ -189,13 +207,18 @@ $(document).ready(function () {
     function renderEvaluatorMenu() {
         $("a.dropdown-item.evaluator").on("click", function (e) {
             currentEvaluator = $(this).attr("id");
+            if (currentEvaluator in fixedNames) {
+                fixedCurrentEvaluator = fixedNames[currentEvaluator];
+            } else {
+                fixedCurrentEvaluator = currentEvaluator;
+            }
 
             const currentEvalContainer = $("ul.list-group.current-evaluator");
             currentEvalContainer.empty();
-            currentEvalContainer.append(`<li class="list-group-item"><strong>🎲 Current Evaluator: ${currentEvaluator}</strong></li>`);
+            currentEvalContainer.append(`<li class="list-group-item"><strong>🎲 Current Evaluator: ${fixedCurrentEvaluator}</strong></li>`);
 
             $("a.dropdown-item.evaluator.active").removeClass("active");
-            $(`a.dropdown-item.evaluator#${currentEvaluator}`).addClass("active");
+            $(`a.dropdown-item.evaluator#${fixedCurrentEvaluator}`).addClass("active");
 
             renderResults();
             // renderPagination();
@@ -204,12 +227,12 @@ $(document).ready(function () {
     }
 
     function renderModelSelectorMenu() {
-        let selectorHtml = (model, checked) => `
+        let selectorHtml = (model, fixedModel, checked) => `
         <li>
           <a class="dropdown-item" id="${model}" href="#">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" value="" ${checked} id="${model}" name="${model}">
-              <label class="form-check-label" for="${model}">${model}</label>
+              <label class="form-check-label" for="${model}">${fixedModel}</label>
             </div>
           </a>
         </li>`;
@@ -225,48 +248,67 @@ $(document).ready(function () {
         modelSelectorMenu.empty();
 
         if (selectedModel == 'all') {
+
             if (activeTF) {
                 // Uncheck all boxes
-                modelSelectorMenu.append(selectorHtml("all", ""));
+                modelSelectorMenu.append(selectorHtml("all", "all", ""));
 
                 for (let i = 1; i <= numModels; i++) {
                     let model = models[i];
-                    modelSelectorMenu.append(selectorHtml(model, ""));
+                    let fixedModel = "";
+                    if (model in fixedNames) {
+                        fixedModel = fixedNames[model]
+                    } else {
+                        fixedModel = model
+                    }
+                    modelSelectorMenu.append(selectorHtml(model, fixedModel, ""));
                 }
 
                 selectedModels = [];
             } else {
                 // Check all boxes
-                modelSelectorMenu.append(selectorHtml("all", "checked"));
+                modelSelectorMenu.append(selectorHtml("all", "all", "checked"));
 
                 for (let i = 1; i <= numModels; i++) {
                     let model = models[i];
-                    modelSelectorMenu.append(selectorHtml(model, "checked"));
+                    let fixedModel = "";
+                    if (model in fixedNames) {
+                        fixedModel = fixedNames[model]
+                    } else {
+                        fixedModel = model
+                    }
+                    modelSelectorMenu.append(selectorHtml(model, fixedModel, "checked"));
                 }
 
                 selectedModels = Array.from(Object.values(models));
             }
         } else {
-            modelSelectorMenu.append(selectorHtml("all", ""));
+            modelSelectorMenu.append(selectorHtml("all", "all", ""));
 
             for (let i = 1; i <= numModels; i++) {
                 let model = models[i];
+                let fixedModel = "";
+                if (model in fixedNames) {
+                    fixedModel = fixedNames[model]
+                } else {
+                    fixedModel = model
+                }
     
                 if (model == selectedModel) {
                     if (activeTF) {
-                        modelSelectorMenu.append(selectorHtml(model, ""));
+                        modelSelectorMenu.append(selectorHtml(model, fixedModel, ""));
                         // Update selectedModels
                         selectedModels = selectedModels.filter(value => value != model);
                     } else {
-                        modelSelectorMenu.append(selectorHtml(model, "checked"));
+                        modelSelectorMenu.append(selectorHtml(model, fixedModel, "checked"));
                         // Update selectedModels
                         selectedModels.push(model);
                     }
                 } else {
                     if (selectedModels.includes(model)) {
-                        modelSelectorMenu.append(selectorHtml(model, "checked"));
+                        modelSelectorMenu.append(selectorHtml(model, fixedModel, "checked"));
                     } else {
-                        modelSelectorMenu.append(selectorHtml(model, ""));
+                        modelSelectorMenu.append(selectorHtml(model, fixedModel, ""));
                     }
                 }
             }
